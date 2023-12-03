@@ -25,7 +25,7 @@ type BagPull struct {
 }
 
 type Game struct {
-	ID    int64
+	ID    int
 	Pulls []BagPull
 }
 
@@ -45,7 +45,23 @@ func (g *Game) PossibleWith(red, green, blue int) bool {
 	return true
 }
 
-func p1() {
+func (g *Game) Minimums() (minRed, minGreen, minBlue int) {
+	for _, p := range g.Pulls {
+		if p.Red > minRed {
+			minRed = p.Red
+		}
+		if p.Green > minGreen {
+			minGreen = p.Green
+		}
+		if p.Blue > minBlue {
+			minBlue = p.Blue
+		}
+	}
+
+	return
+}
+
+func parseGames() []Game {
 	b, err := input.ReadFile("input.txt")
 	if err != nil {
 		log.Fatalf("failed to open input: %s", err)
@@ -76,7 +92,7 @@ func p1() {
 		if err != nil {
 			log.Fatalf("!")
 		}
-		g := Game{ID: i, Pulls: []BagPull{}}
+		g := Game{ID: int(i), Pulls: []BagPull{}}
 
 		// Get the draws out
 		draws := strings.Split(game, "; ")
@@ -102,21 +118,44 @@ func p1() {
 		}
 
 		games = append(games, g)
-
 	}
 
-	possible := []int64{}
+	return games
+}
+
+func p1(games []Game) int {
+	possible := []int{}
 	for _, g := range games {
 		if g.PossibleWith(12, 13, 14) {
 			possible = append(possible, g.ID)
 		}
 	}
 
-	var sum int64
+	var sum int
 	for _, p := range possible {
 		sum = sum + p
 	}
-	log.Printf("Sum of possible game IDs: %d", sum)
+
+	return sum
+}
+
+func p2(games []Game) int {
+	var sum int
+	for _, game := range games {
+		r, g, b := game.Minimums()
+		power := r * g * b
+		sum = sum + power
+	}
+
+	return sum
+}
+
+func main() {
+	games := parseGames()
+	possibleGames := p1(games)
+	log.Printf("Sum of possible game IDs: %d", possibleGames)
+	sumOfGamePowers := p2(games)
+	log.Printf("Sum of game powers: %d", sumOfGamePowers)
 }
 
 func parseInt(s string) int {
@@ -126,11 +165,4 @@ func parseInt(s string) int {
 	}
 
 	return int(i)
-}
-
-func p2() {
-}
-func main() {
-	p1()
-	//p2()
 }
