@@ -18,7 +18,7 @@ const placeHolder = "‽"
 
 type Location struct {
 	char   string
-	number string
+	number *string
 }
 
 type Schematic struct {
@@ -49,7 +49,8 @@ func (s *Schematic) SetNumber(x, y int, value string) {
 		if xPos < 0 {
 			log.Fatalf("Error trying to set %s into the grid", value)
 		}
-		location := Location{char: string(value[length-(i+1)]), number: value}
+		char := (value)[length-(i+1)]
+		location := Location{char: string(char), number: &value}
 		s.grid[y][xPos] = location
 	}
 }
@@ -101,9 +102,9 @@ func (s *Schematic) HTML() string {
 		for x, location := range row {
 			hasPartNumber := false
 
-			if location.char != "." && location.number == "" {
+			if location.char != "." && location.number == nil {
 				for _, n := range s.Neighbors(x, y) {
-					if n.number != "" {
+					if n.number != nil {
 						hasPartNumber = true
 						break
 					}
@@ -175,16 +176,15 @@ func parseSchematic() Schematic {
 
 func p1() int {
 	schematic := parseSchematic()
-	partNeighbors := []int{}
+	partNeighbors := map[*string]interface{}{}
 	for _, p := range schematic.parts {
 		//log.Printf("Checking for the neighbors of the part at (%d,%d)", p[0], p[1])
 		neighbors := schematic.Neighbors(p[0], p[1])
 
 		for _, n := range neighbors {
-			if n.number != "" {
-				log.Printf("Got a numerical neighbor for (%d,%d): %s", p[0], p[1], n.number)
-				i, _ := strconv.ParseInt(n.number, 10, 64)
-				partNeighbors = append(partNeighbors, int(i))
+			if n.number != nil {
+				log.Printf("Got a numerical neighbor for (%d,%d): %s\t%p", p[0], p[1], *n.number, n.number)
+				partNeighbors[n.number] = true
 			}
 		}
 	}
@@ -202,8 +202,9 @@ func p1() int {
 	var sum int
 	count := len(partNeighbors)
 	log.Printf("Got %d labeled part numbers", count)
-	for _, n := range partNeighbors {
-		sum = sum + n
+	for pointer := range partNeighbors {
+		i, _ := strconv.ParseInt(*pointer, 10, 64)
+		sum = sum + int(i)
 	}
 	return sum
 }
